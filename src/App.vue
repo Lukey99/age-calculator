@@ -4,14 +4,13 @@
       <div
         v-for="inputValue in inputValues"
         class="date-input"
-        :class="{ error: isIncorrect(inputValue.key) }"
+        :class="{ error: inputValue.error }"
       >
         <label :for="`input-${inputValue.key}`">
           {{ inputValue.key === "date" ? "day" : inputValue.key }}
         </label>
         <input
           v-model="inputValue.value"
-          v-on:keyup="checkValues"
           type="text"
           :maxlength="inputValue.key === 'year' ? 4 : 2"
           :placeholder="inputValue.placeholder"
@@ -23,9 +22,9 @@
     </div>
     <div class="separator">
       <div class="line"></div>
-      <div class="icon-container">
+      <button class="icon-container" @click="checkValues">
         <IconArrow class="icon-arrow" />
-      </div>
+      </button>
     </div>
     <div class="results-wrapper">
       <div class="result" v-for="result in resultValues">
@@ -46,14 +45,27 @@ import "dayjs/locale/fr";
 dayjs.locale("fr");
 
 const inputValues = ref([
-  { key: "date", placeholder: "DD", value: "", error: "Must be a valid day" },
+  {
+    key: "date",
+    placeholder: "DD",
+    value: "",
+    description: "Must be a valid day",
+    error: false,
+  },
   {
     key: "month",
     placeholder: "MM",
     value: "",
-    error: "Must be a valid month",
+    description: "Must be a valid month",
+    error: false,
   },
-  { key: "year", placeholder: "YYYY", value: "", error: "Must be in the past" },
+  {
+    key: "year",
+    placeholder: "YYYY",
+    value: "",
+    description: "Must be in the past",
+    error: false,
+  },
 ]);
 
 const resultValues = ref([
@@ -80,12 +92,15 @@ const isIncorrect = (key) => {
 const checkValues = () => {
   for (const input of inputValues.value) {
     if (isIncorrect(input.key)) return;
+    if (input.value === "") return;
   }
   for (const result of resultValues.value) {
     const input = inputValues.value.find((input) => input.key === result.key);
     const newDate = dayjs().set(input.key, parseInt(input.value));
-    const diff = newDate.diff(dayjs(), result.key);
-    console.log(newDate, dayjs(), diff);
+    const diff = newDate.diff(
+      dayjs(),
+      result.key === "date" ? "day" : result.key
+    );
     result.value = Math.abs(diff);
   }
 };
@@ -196,6 +211,7 @@ const checkValues = () => {
       transform: translate(-50%, -50%);
       border-radius: 50%;
       background-color: var(--purple);
+      border: none;
       padding: 0.75rem;
       .icon-arrow {
         width: 1.5rem;
